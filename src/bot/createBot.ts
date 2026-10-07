@@ -3,6 +3,9 @@ import { pathfinder } from 'mineflayer-pathfinder'
 import { Config } from '../config.js'
 import { createLogger } from '../util/logger.js'
 import { configureMovements } from './navigation.js'
+import { applyProtocolFixes } from './protocolFixes.js'
+import { installDiagnostics } from './diagnostics.js'
+import { serverboundTableFix } from './packetTablePatch.js'
 
 const log = createLogger('bot')
 
@@ -15,10 +18,15 @@ export function createBot(config: Config): Bot {
     username: minecraft.account,
     auth: minecraft.auth,
     version: minecraft.version,
-    profilesFolder: minecraft.profilesFolder
+    profilesFolder: minecraft.profilesFolder,
+    customPackets: serverboundTableFix(minecraft.version)
   })
 
   bot.loadPlugin(pathfinder)
+  installDiagnostics(bot, config.diagnostics)
+
+  // Internal plugins are injected once the version is known; patch them after that.
+  bot.once('login', () => applyProtocolFixes(bot))
 
   bot.once('spawn', () => {
     configureMovements(bot)
@@ -26,8 +34,9 @@ export function createBot(config: Config): Bot {
   })
 
   bot.on('death', () => log.warn('Bot died'))
-  bot.on('kicked', reason => log.error('Kicked:', reason))
-  bot.on('error', error => log.error('Error:', error))
+  bot.on('messagestr', (message, position) => {
+    if (position !== 'chat') log.debug(`[server] ${message}`)
+  })
   bot.on('end', reason => log.info(`Disconnected: ${reason}`))
 
   return bot

@@ -10,6 +10,7 @@ export function buildSystemPrompt(botName: string, registry: ToolRegistry): stri
 Rules:
 - Act through tools. Never claim you did something unless a tool result confirms it.
 - Work step by step: call a tool, read its result, then decide the next call. Keep going until the request is fully done or clearly impossible.
+- Don't give up early. If a tool did only part of the job ("Mined 3 (wanted 10)", "nothing found nearby"), continue: call it again, try a broader name or radius, or explore and retry. Only stop and report partial progress after a few genuine attempts fail.
 - You may call several tools in a row when each step is independent; otherwise wait for each result.
 - When finished, reply with one short chat message summarizing the outcome (no tool call). It is posted to chat for you.
 - If you cannot observe something or a request is ambiguous, say so briefly or ask.

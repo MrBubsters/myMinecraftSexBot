@@ -107,9 +107,11 @@ export class Agent {
       for (const call of calls) {
         const name = call.function.name
         log.info(`→ ${name} ${JSON.stringify(call.function.arguments)}`)
+        const started = Date.now()
         const outcome = await this.registry.execute({ name, arguments: call.function.arguments }, ctx)
+        const took = ((Date.now() - started) / 1000).toFixed(1)
         const output = outcome.output.length > maxToolOutput ? `${outcome.output.slice(0, maxToolOutput)}… (truncated)` : outcome.output
-        log.info(`${outcome.ok ? '✓' : '✗'} ${name}: ${output.split('\n')[0]}`)
+        log.info(`${outcome.ok ? '✓' : '✗'} ${name} (${took}s): ${output.split('\n')[0]}`)
         messages.push({ role: 'tool', tool_name: name, content: output })
       }
     }

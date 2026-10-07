@@ -15,13 +15,21 @@ function isAlive(bot: Bot, entity: Entity): boolean {
   return entity.isValid && bot.entities[entity.id] === entity
 }
 
-/** Chase and hit an entity until it dies, escapes, or the bot gets too hurt. */
-export async function fight(bot: Bot, entity: Entity, signal: AbortSignal, timeoutMs: number): Promise<'killed' | 'escaped' | 'low_health' | 'timeout'> {
+export type FightResult = 'killed' | 'escaped' | 'unreachable' | 'low_health' | 'timeout'
+
+/**
+ * Chase and hit an entity until it dies, the bot gets too hurt, or it gets dragged
+ * more than `leash` blocks from where the fight started (so it doesn't follow a
+ * skeleton deep into a cave).
+ */
+export async function fight(bot: Bot, entity: Entity, signal: AbortSignal, timeoutMs: number, leash = 20): Promise<FightResult> {
   const weapon = bestWeapon(bot)
   if (weapon && bot.heldItem?.type !== weapon.type) await bot.equip(weapon, 'hand')
 
+  const start = bot.entity.position.clone()
   const deadline = Date.now() + timeoutMs
   let lastHit = 0
+  let lastProgress = Date.now()
   bot.pathfinder.setGoal(new goals.GoalFollow(entity, 2), true)
   try {
     while (Date.now() < deadline) {
@@ -29,12 +37,13 @@ export async function fight(bot: Bot, entity: Entity, signal: AbortSignal, timeo
       if (!isAlive(bot, entity)) return 'killed'
       if (bot.health <= lowHealth) return 'low_health'
       const distance = bot.entity.position.distanceTo(entity.position)
-      if (distance > 32) return 'escaped'
+      if (distance > 32 || entity.position.distanceTo(start) > leash) return 'escaped'
+      if (Date.now() - lastProgress > 15_000) return 'unreachable'
       // Respect the attack cooldown (~0.6s for swords) so hits do full damage.
       if (distance <= 3.2 && Date.now() - lastHit >= 650) {
         await bot.lookAt(entity.position.offset(0, entity.height * 0.8, 0), true)
         bot.attack(entity)
-        lastHit = Date.now()
+        lastHit = lastProgress = Date.now()
       }
       await sleep(100, signal)
     }
@@ -64,9 +73,9 @@ export const combatTools = [
       let outcome = ''
 
       while (kills < count) {
-        const entity = findEntity(bot, target, 48)
+        const entity = findEntity(bot, target, 24)
         if (!entity) {
-          outcome = kills === 0 ? `No ${target} within 48 blocks.` : `No more ${target} nearby.`
+          outcome = kills === 0 ? `No ${target} within 24 blocks.` : `No more ${target} nearby.`
           break
         }
         const result = await fight(bot, entity, signal, 45_000)
@@ -86,21 +95,26 @@ export const combatTools = [
   defineTool({
     name: 'defend',
     category,
-    description: 'Fight every hostile mob within a radius until the area is clear.',
+    description:
+      'Fight every hostile mob within a radius until the area is clear, staying near the current spot. ' +
+      'Use this for "protect yourself" / "defend me"; it will not chase mobs far away or into caves.',
     params: {
       radius: { type: 'number', description: 'Radius to clear (default 16)' }
     },
     async handler(args, { bot, signal }) {
       const radius = args.optionalNumber('radius', { min: 4, max: 32 }) ?? 16
       const killed: string[] = []
+      const gaveUp = new Set<number>()
       for (let i = 0; i < 15; i++) {
-        const enemy = nearbyEntities(bot, radius).find(isHostile)
+        const enemy = nearbyEntities(bot, radius).find(e => isHostile(e) && !gaveUp.has(e.id))
         if (!enemy) break
-        const result = await fight(bot, enemy, signal, 30_000)
+        const result = await fight(bot, enemy, signal, 30_000, radius + 4)
         if (result === 'low_health') return `Retreat advised: health ${Math.round(bot.health)}/20. Killed: ${killed.join(', ') || 'none'}`
         if (result === 'killed') killed.push(entityLabel(enemy))
+        else gaveUp.add(enemy.id)
       }
-      return killed.length > 0 ? `Area clear. Killed: ${killed.join(', ')}` : 'No hostile mobs nearby'
+      const skipped = gaveUp.size > 0 ? ` Left ${gaveUp.size} mob(s) that were out of reach.` : ''
+      return killed.length > 0 ? `Area clear. Killed: ${killed.join(', ')}.${skipped}` : `No reachable hostile mobs nearby.${skipped}`
     }
   })
 ]

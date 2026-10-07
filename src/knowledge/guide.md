@@ -48,6 +48,7 @@
 ## Survival
 - Food bar ≤ 6 stops health regeneration and sprinting. Eat when food < 14 (`eat`). Good food: cooked meat, bread, baked potato. Food sources: hunt animals with `attack` (cow, pig, sheep, chicken), then cook.
 - Night (tick 13000–23000) spawns zombies, skeletons, creepers and spiders in the dark. Options: `sleep` in a bed, stay in a lit enclosed space, or `defend`.
+- "Protect yourself" / "defend me": `equip_best_armor`, then `defend`. Don't go hunting mobs in caves.
 - Creepers explode — kill fast or move away. Skeletons shoot from range. Don't fight with low health (< 6): retreat, eat, then fight.
 - Lava and deep water are dangerous. Pathfinding avoids them, but digging straight down is risky.
 - Torches (light level) stop mobs spawning near a base.
@@ -64,9 +65,11 @@
 - The inventory has 36 slots; check `check_inventory` before long gathering trips.
 
 ## Animals & farming
+- "Harvest the crops" / "farm": `harvest_crops` (optionally `crop: "wheat"`). It only takes ripe crops, replants, and keeps going until nothing ripe is left. Don't use `collect_block` on crops; it would destroy unripe ones.
+- If it reports crops still growing, say so; they need time (or bone meal via `use_item_on_block`).
+- New farm: till dirt within 4 blocks of water with a hoe (`use_item_on_block`), then `plant_seeds`. Seeds come from breaking grass (`collect_block short_grass`).
 - Breed with `interact_entity` holding food: cows/sheep → wheat, pigs → carrot/potato, chickens → seeds. Two adults needed.
 - Shear sheep (shears = 2 iron_ingot) for wool, or kill them. Milk cows with a bucket.
-- Farming: till dirt with a hoe (`use_item_on_block`), then use seeds on the farmland, near water.
 
 ## Communication
 - Keep chat short (one or two sentences). For long tasks, a brief progress `say` every few steps is welcome.

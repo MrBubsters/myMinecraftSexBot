@@ -1,4 +1,5 @@
 import type { Tool } from 'ollama'
+import { setActivity } from '../bot/diagnostics.js'
 import { TaskCancelledError, errorMessage } from '../util/async.js'
 import { Args, ToolInputError } from './args.js'
 import { buildingTools } from './building.js'
@@ -6,6 +7,7 @@ import { combatTools } from './combat.js'
 import { communicationTools } from './communication.js'
 import { containerTools } from './containers.js'
 import { craftingTools } from './crafting.js'
+import { farmingTools } from './farming.js'
 import { gatheringTools } from './gathering.js'
 import { interactionTools } from './interaction.js'
 import { inventoryTools } from './inventory.js'
@@ -67,6 +69,7 @@ export class ToolRegistry {
     const tool = this.tools.get(call.name)
     if (!tool) return { ok: false, output: `Unknown tool "${call.name}". Available: ${[...this.tools.keys()].join(', ')}` }
 
+    setActivity(`${call.name} ${JSON.stringify(call.arguments ?? {})}`)
     try {
       const output = await tool.handler(new Args(call.arguments ?? {}), ctx)
       return { ok: true, output }
@@ -74,6 +77,8 @@ export class ToolRegistry {
       if (error instanceof TaskCancelledError || ctx.signal.aborted) throw new TaskCancelledError()
       if (!(error instanceof ToolInputError)) ctx.log.warn(`Tool ${call.name} failed`, error)
       return { ok: false, output: `Error: ${errorMessage(error)}` }
+    } finally {
+      setActivity('idle')
     }
   }
 }
@@ -84,6 +89,7 @@ export function createToolRegistry(): ToolRegistry {
     ...perceptionTools,
     ...movementTools,
     ...gatheringTools,
+    ...farmingTools,
     ...craftingTools,
     ...inventoryTools,
     ...containerTools,

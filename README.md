@@ -13,6 +13,14 @@ npm run typecheck
 
 Requires Node 22+ and Ollama with the configured model pulled (`ollama pull gpt-oss:20b`). The full option list is in `.env.example`. `OLLAMA_NUM_CTX` matters: the system prompt plus tool schemas are about 7k tokens, so keep it at 16k or more.
 
+## Protocol workarounds
+
+Minecraft 26.2 support comes from community forks of mineflayer, minecraft-protocol and minecraft-data. Those forks have bugs that get the bot kicked, and `src/bot/packetTablePatch.ts` and `src/bot/protocolFixes.ts` work around them at runtime. [docs/PROTOCOL_WORKAROUNDS.md](docs/PROTOCOL_WORKAROUNDS.md) describes each one and how to remove it. After upgrading those packages, run:
+
+```bash
+npm run check:protocol
+```
+
 ## Chat commands
 
 These are handled instantly, without the LLM:
@@ -36,6 +44,9 @@ src/
     prompt.ts           system prompt = rules + generated tool catalog + guide.md
   bot/
     createBot.ts        mineflayer + pathfinder setup, lifecycle logging
+    packetTablePatch.ts corrects the fork's serverbound packet IDs (see docs/PROTOCOL_WORKAROUNDS.md)
+    protocolFixes.ts    runtime fixes for attack/use_entity packets and the signed-chat checksum
+    diagnostics.ts      packet recorder, pre-send validation, kick reports in logs/
     navigation.ts       cancellable pathfinding; travel (no digging) vs. dig movement profiles
     crafting.ts         recursive crafter (ensureItem) and dry-run material planner (planMaterials)
     placement.ts        block placement with reach and reference-face handling
@@ -50,6 +61,10 @@ src/
   knowledge/
     guide.md            Minecraft know-how for the LLM (progression, tiers, worked examples)
     smelting.ts         furnace recipes and fuel values (missing from minecraft-data)
+scripts/
+  check-protocol.ts     reports which protocol workarounds are still needed
+docs/
+  PROTOCOL_WORKAROUNDS.md
 ```
 
 ## Design notes

@@ -25,6 +25,11 @@ export type Config = {
     maxSteps: number
     autoEat: boolean
   }
+  diagnostics: {
+    /** off: nothing; kick: write a packet report on kick/error; all: also log every non-noisy packet live. */
+    packets: 'off' | 'kick' | 'all'
+    bufferSize: number
+  }
 }
 
 function required(name: string): string {
@@ -60,6 +65,12 @@ function think(model: string): ThinkSetting {
   return ['1', 'true', 'yes', 'on'].includes(raw)
 }
 
+function packetMode(): Config['diagnostics']['packets'] {
+  const raw = optional('LOG_PACKETS')?.toLowerCase() ?? 'kick'
+  if (raw !== 'off' && raw !== 'kick' && raw !== 'all') throw new Error(`LOG_PACKETS must be off, kick or all, got "${raw}"`)
+  return raw
+}
+
 export function loadConfig(): Config {
   const auth = optional('MC_AUTH') ?? 'microsoft'
   if (auth !== 'microsoft' && auth !== 'offline') {
@@ -90,6 +101,10 @@ export function loadConfig(): Config {
     agent: {
       maxSteps: int('AGENT_MAX_STEPS', 40),
       autoEat: bool('AUTO_EAT', true)
+    },
+    diagnostics: {
+      packets: packetMode(),
+      bufferSize: int('PACKET_BUFFER', 200)
     }
   }
 }

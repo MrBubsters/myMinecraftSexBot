@@ -15,6 +15,7 @@ function lookup<T extends NamedDef>(byName: Record<string, T>, raw: string): T |
   return byName[name]
     ?? (name.endsWith('es') ? byName[name.slice(0, -2)] : undefined)
     ?? (name.endsWith('s') ? byName[name.slice(0, -1)] : undefined)
+    ?? byName[`${name}s`]
 }
 
 function suggestions(names: string[], raw: string, limit = 8): string {
@@ -54,6 +55,8 @@ const blockAliases: Record<string, (name: string) => boolean> = {
   lava: n => n === 'lava',
   bed: n => n.endsWith('_bed'),
   wool: n => n.endsWith('_wool'),
+  crop: n => ['wheat', 'carrots', 'potatoes', 'beetroots'].includes(n),
+  farm: n => ['wheat', 'carrots', 'potatoes', 'beetroots'].includes(n),
   flower: n => ['dandelion', 'poppy', 'blue_orchid', 'allium', 'azure_bluet', 'oxeye_daisy', 'cornflower', 'lily_of_the_valley'].includes(n) || n.endsWith('_tulip')
 }
 
@@ -66,7 +69,7 @@ export function resolveBlockFamily(bot: Bot, raw: string): { ids: number[]; name
   const byName = bot.registry.blocksByName
   const all = Object.keys(byName)
   const name = normalizeName(raw)
-  const candidates = [...new Set([name, name.replace(/es$/, ''), name.replace(/s$/, '')])]
+  const candidates = [...new Set([name, name.replace(/es$/, ''), name.replace(/s$/, ''), `${name}s`])]
 
   const strategies: Array<(c: string) => string[]> = [
     c => (blockAliases[c] ? all.filter(blockAliases[c]) : []),
