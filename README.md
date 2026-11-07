@@ -13,6 +13,21 @@ npm run typecheck
 
 Requires Node 22+ and Ollama with the configured model pulled (`ollama pull gpt-oss:20b`). The full option list is in `.env.example`. `OLLAMA_NUM_CTX` matters: the system prompt plus tool schemas are about 7k tokens, so keep it at 16k or more.
 
+## Game knowledge
+
+The LLM's built-in Minecraft knowledge is often outdated for new versions. On first start the bot downloads the official server jar for `MC_VERSION` from Mojang (verified against Mojang's SHA1) and builds a knowledge base from the game's own data: every recipe (crafting, smelting, stonecutting, smithing), item and entity tags, block and mob loot tables, chest loot and villager trades. That's combined with minecraft-data (food values, harvest tools) and a few hand-written mechanics (`src/knowledge/mechanics.ts`, for things like shearing beehives). The result is about 2,000 short entries, cached in `.cache/`.
+
+The model gets these entries in two ways:
+- **Automatically:** entries for anything a request names (e.g. "breed the bees" → bee) are added to that request as trusted facts.
+- **On demand:** the `lookup` tool searches the knowledge base, and the prompt tells the model to use it instead of its memory.
+
+A new `MC_VERSION` builds a new knowledge base automatically. To force a rebuild, or to see what a query returns:
+
+```bash
+npm run build:knowledge
+npm run build:knowledge -- "honeycomb"
+```
+
 ## Protocol workarounds
 
 Minecraft 26.2 support comes from community forks of mineflayer, minecraft-protocol and minecraft-data. Those forks have bugs that get the bot kicked, and `src/bot/packetTablePatch.ts` and `src/bot/protocolFixes.ts` work around them at runtime. [docs/PROTOCOL_WORKAROUNDS.md](docs/PROTOCOL_WORKAROUNDS.md) describes each one and how to remove it. After upgrading those packages, run:
@@ -59,10 +74,15 @@ src/
     commands.ts         built-in ! commands
   tools/                one file per category; registry.ts collects them
   knowledge/
+    knowledgeBase.ts    builds/caches/searches game knowledge from the vanilla data pack
+    vanillaData.ts      downloads the official server jar and reads recipes, tags, loot, trades
+    breeding.ts         breeding food per species
+    mechanics.ts        ways to obtain items that aren't recipes or loot (shearing hives, milking)
     guide.md            Minecraft know-how for the LLM (progression, tiers, worked examples)
     smelting.ts         furnace recipes and fuel values (missing from minecraft-data)
 scripts/
   check-protocol.ts     reports which protocol workarounds are still needed
+  build-knowledge.ts    rebuilds the knowledge base (optionally shows a query's results)
 docs/
   PROTOCOL_WORKAROUNDS.md
 ```

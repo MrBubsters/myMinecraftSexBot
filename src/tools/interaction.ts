@@ -93,7 +93,7 @@ export const interactionTools = [
     name: 'interact_entity',
     category,
     description:
-      'Right-click a mob, optionally holding an item: breed animals (wheat for cows/sheep, seeds for chickens, carrots for pigs), ' +
+      'Right-click a mob, optionally holding an item (for breeding use breed_animals instead): ' +
       'shear sheep, milk cows with a bucket, tame wolves with bones, put a saddle on a pig/horse.',
     params: {
       target: { type: 'string', description: 'Mob name or player', required: true },

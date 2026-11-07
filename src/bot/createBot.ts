@@ -2,6 +2,7 @@ import mineflayer, { Bot } from 'mineflayer'
 import { pathfinder } from 'mineflayer-pathfinder'
 import { Config } from '../config.js'
 import { createLogger } from '../util/logger.js'
+import { enableDoorOpener } from './doors.js'
 import { configureMovements } from './navigation.js'
 import { applyProtocolFixes } from './protocolFixes.js'
 import { installDiagnostics } from './diagnostics.js'
@@ -30,6 +31,7 @@ export function createBot(config: Config): Bot {
 
   bot.once('spawn', () => {
     configureMovements(bot)
+    enableDoorOpener(bot)
     log.info(`Connected as ${bot.username}`)
   })
 

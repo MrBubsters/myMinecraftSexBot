@@ -6,8 +6,10 @@
 - High-level tools already handle the details. `collect_block` finds, walks to, mines and picks up blocks. `craft_item` crafts all intermediate parts and sets up a crafting table itself. `smelt_item` sets up a furnace and fuel itself. Do not micro-manage these with `go_to` + `dig_block` unless they fail.
 - Craft the final item directly (`craft_item wooden_pickaxe`), never its parts (planks, sticks, table) one by one.
 - Gather full amounts in one call (`collect_block log count 4`), not one block at a time.
+- Facts about the game (recipes, drops, breeding food, trades) come from `lookup`, which reads this version's real game data. Use it instead of guessing.
 - Check before guessing: `check_inventory`, `get_recipe`, `find_blocks`, `look_around`, `get_status`.
 - If nothing is found nearby, `explore` in a direction, then search again. Try 2–3 times before giving up.
+- Movement opens wooden doors and fence gates on the way and closes them behind you, so `go_to` works from inside buildings. Iron doors need their button or lever: `activate_block` on it first.
 - Coordinates: y is height. Sea level is ~y63. Negative y is deep underground (deepslate below y0).
 
 ## Worked examples
@@ -68,7 +70,7 @@
 - "Harvest the crops" / "farm": `harvest_crops` (optionally `crop: "wheat"`). It only takes ripe crops, replants, and keeps going until nothing ripe is left. Don't use `collect_block` on crops; it would destroy unripe ones.
 - If it reports crops still growing, say so; they need time (or bone meal via `use_item_on_block`).
 - New farm: till dirt within 4 blocks of water with a hoe (`use_item_on_block`), then `plant_seeds`. Seeds come from breaking grass (`collect_block short_grass`).
-- Breed with `interact_entity` holding food: cows/sheep → wheat, pigs → carrot/potato, chickens → seeds. Two adults needed.
+- Breeding: `breed_animals` (animal or "all"). It walks around feeding adult pairs the right food: cows/sheep/goats → wheat, pigs → carrot/potato/beetroot, chickens → seeds, rabbits → carrots/dandelions. Babies take ~20 minutes to grow up; fed adults wait 5 minutes before breeding again. Get the food first if it reports none (`harvest_crops`, or `collect_block short_grass` for seeds).
 - Shear sheep (shears = 2 iron_ingot) for wool, or kill them. Milk cows with a bucket.
 
 ## Communication

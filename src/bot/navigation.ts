@@ -2,6 +2,7 @@ import { Bot } from 'mineflayer'
 import { Movements, goals } from 'mineflayer-pathfinder'
 import { Vec3 } from 'vec3'
 import { TaskCancelledError, errorMessage } from '../util/async.js'
+import { teachDoors } from './doors.js'
 
 /**
  * Two movement profiles: normal travel never breaks blocks (so the bot does not
@@ -22,8 +23,12 @@ export function configureMovements(bot: Bot) {
   dig.allowParkour = true
   dig.allowSprinting = true
 
+  for (const movements of [travel, dig]) teachDoors(movements)
+
   profiles.set(bot, { travel, dig })
   bot.pathfinder.setMovements(travel)
+  // Routes out of buildings and through villages can take longer to plan than the 5s default.
+  bot.pathfinder.thinkTimeout = 10_000
 }
 
 export type NavigateOptions = {

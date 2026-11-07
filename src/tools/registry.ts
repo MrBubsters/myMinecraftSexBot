@@ -2,6 +2,7 @@ import type { Tool } from 'ollama'
 import { setActivity } from '../bot/diagnostics.js'
 import { TaskCancelledError, errorMessage } from '../util/async.js'
 import { Args, ToolInputError } from './args.js'
+import { animalTools } from './animals.js'
 import { buildingTools } from './building.js'
 import { combatTools } from './combat.js'
 import { communicationTools } from './communication.js'
@@ -11,6 +12,7 @@ import { farmingTools } from './farming.js'
 import { gatheringTools } from './gathering.js'
 import { interactionTools } from './interaction.js'
 import { inventoryTools } from './inventory.js'
+import { knowledgeTools } from './knowledge.js'
 import { movementTools } from './movement.js'
 import { perceptionTools } from './perception.js'
 import { survivalTools } from './survival.js'
@@ -86,10 +88,12 @@ export class ToolRegistry {
 export function createToolRegistry(): ToolRegistry {
   return new ToolRegistry([
     ...communicationTools,
+    ...knowledgeTools,
     ...perceptionTools,
     ...movementTools,
     ...gatheringTools,
     ...farmingTools,
+    ...animalTools,
     ...craftingTools,
     ...inventoryTools,
     ...containerTools,

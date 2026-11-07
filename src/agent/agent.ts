@@ -2,6 +2,7 @@ import { Bot } from 'mineflayer'
 import { stopAllMovement } from '../bot/navigation.js'
 import { describeWorldState } from '../bot/status.js'
 import { Config } from '../config.js'
+import { getKnowledgeBase } from '../tools/knowledge.js'
 import { ToolRegistry } from '../tools/registry.js'
 import { TaskCancelledError, errorMessage } from '../util/async.js'
 import { createLogger } from '../util/logger.js'
@@ -77,11 +78,11 @@ export class Agent {
 
   private async run(request: AgentRequest, signal: AbortSignal) {
     log.info(`${request.username}: ${request.message}`)
-    this.systemPrompt ??= buildSystemPrompt(this.bot.username, this.registry)
+    this.systemPrompt ??= buildSystemPrompt(this.bot.username, this.bot.version, this.registry)
 
     const userMessage: Message = {
       role: 'user',
-      content: buildUserMessage(request.username, request.message, describeWorldState(this.bot))
+      content: buildUserMessage(request.username, request.message, describeWorldState(this.bot), this.factsFor(request.message))
     }
     const messages: Message[] = [
       { role: 'system', content: this.systemPrompt },
@@ -122,6 +123,13 @@ export class Agent {
     if (reply) this.bot.chat(reply.slice(0, 256))
 
     this.remember(request, reply)
+  }
+
+  /** Knowledge entries for the things a request names (e.g. "bees" -> how bees breed), injected so the LLM needn't think to look. */
+  private factsFor(message: string): string[] {
+    const docs = getKnowledgeBase()?.relevant(message, 3) ?? []
+    if (docs.length > 0) log.debug(`Injected facts: ${docs.map(d => d.title).join(', ')}`)
+    return docs.map(d => (d.text.length > 700 ? `${d.text.slice(0, 700)}…` : d.text))
   }
 
   /** Keep a compact record: the request without the bulky state dump, and the final reply. */
