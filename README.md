@@ -6,12 +6,20 @@ A Minecraft bot (mineflayer) controlled by a local LLM (Ollama). The owner gives
 
 ```bash
 npm install
-cp .env.example .env   # fill in host, account, owner
-npm start              # or: npm run dev (restarts on file changes)
-npm run typecheck
+cp .env.example .env
 ```
 
-Requires Node 22+ and Ollama with the configured model pulled (`ollama pull gpt-oss:20b`). The full option list is in `.env.example`. `OLLAMA_NUM_CTX` matters: the system prompt plus tool schemas are about 7k tokens, so keep it at 16k or more.
+In `.env`, set the required `MC_HOST` (server address), `MC_ACCOUNT` (account name/email) and `MC_OWNER` (your in-game username). Choose `MC_AUTH=microsoft` or `MC_AUTH=offline` as appropriate; optional settings and defaults are listed in `.env.example`. The npm start/dev commands load `.env` automatically. Requires Node 22+, a reachable Minecraft server matching `MC_VERSION`, and Ollama running with the configured model pulled (by default, `ollama pull gpt-oss:20b`). `OLLAMA_NUM_CTX` should be at least 16k because the system prompt and tool schemas use about 7k tokens.
+
+Run the bot with `npm start`, or use `npm run dev` to restart it when files change. On first start it downloads the official Minecraft server jar in the background to build the knowledge base; the result is cached in `.cache/`.
+
+## npm scripts
+
+- `npm start` — start the bot, loading settings from `.env` if present.
+- `npm run dev` — start the bot in watch mode, restarting when files change.
+- `npm run typecheck` — run TypeScript checks without emitting files.
+- `npm run check:protocol` — report which protocol workarounds are still needed.
+- `npm run build:knowledge` — rebuild the game knowledge base, optionally showing results for a query.
 
 ## Game knowledge
 
