@@ -83,6 +83,7 @@ src/
 scripts/
   check-protocol.ts     reports which protocol workarounds are still needed
   build-knowledge.ts    rebuilds the knowledge base (optionally shows a query's results)
+  dashboard.py          live CPU/RAM/GPU terminal dashboard (stdlib Python; `ssh -t host python3 scripts/dashboard.py`)
 docs/
   PROTOCOL_WORKAROUNDS.md
 ```
